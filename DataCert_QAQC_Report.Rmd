@@ -744,10 +744,10 @@ LPI10 <- function(Unit){
 
 ```{r}
 # convert all synonyms to their accepted name, according to mtbl_Plants
-lpi4 <- left_join(lpi, mtbl_Plants %>% dplyr::select(Veg_Code, Accepted_Code), by = c("VegCode" = "Veg_Code")) %>%
-  mutate(Accepted_Code = ifelse(VegCode == "NP", "NP", Accepted_Code)) %>%
-  mutate(Accepted_Code = ifelse(VegSub == "Substrate", VegCode, Accepted_Code)) %>%
-  mutate(Accepted_Code = ifelse(is.na(Accepted_Code), VegCode, Accepted_Code)) %>%
+lpi4 <- left_join(lpi, mtbl_Plants %>% dplyr::select(Veg_Code, Reporting_Code), by = c("VegCode" = "Veg_Code")) %>%
+  mutate(Reporting_Code = ifelse(VegCode == "NP", "NP", Reporting_Code)) %>%
+  mutate(Reporting_Code = ifelse(VegSub == "Substrate", VegCode, Reporting_Code)) %>%
+  mutate(Reporting_Code = ifelse(is.na(Reporting_Code), VegCode, Reporting_Code)) %>%
   dplyr::select(-VegCode) %>%
   filter(Unit_Code != "ALFL")
 ```
@@ -995,8 +995,8 @@ CQ9 <- function(Unit){
 
 ```{r}
 # Finally, we will convert all synonyms to their accepted name, according to mtbl_Plants 
-circ_quads <- left_join(quads, mtbl_Plants %>% dplyr::select(Veg_Code, Accepted_Code), by = c("Species_Code" = "Veg_Code")) %>%
-  mutate(Accepted_Code = ifelse(is.na(Accepted_Code), Species_Code, Accepted_Code))%>%
+circ_quads <- left_join(quads, mtbl_Plants %>% dplyr::select(Veg_Code, Reporting_Code), by = c("Species_Code" = "Veg_Code")) %>%
+  mutate(Reporting_Code = ifelse(is.na(Reporting_Code), Species_Code, Reporting_Code))%>%
   dplyr::select(-Species_Code)%>%
   filter(Unit_Code != "ALFL")
 ```
@@ -1219,8 +1219,8 @@ DQ7 <- function(Unit){
 
 ```{r}
 # Convert to accepted code
-divided_quads2 <- left_join(divided_quads, mtbl_Plants %>% dplyr::select(Veg_Code, Accepted_Code), by = c("Veg_Code" = "Veg_Code")) %>%
-  mutate(Accepted_Code = ifelse(is.na(Accepted_Code), Veg_Code, Accepted_Code)) %>%
+divided_quads2 <- left_join(divided_quads, mtbl_Plants %>% dplyr::select(Veg_Code, Reporting_Code), by = c("Veg_Code" = "Veg_Code")) %>%
+  mutate(Reporting_Code = ifelse(is.na(Reporting_Code), Veg_Code, Reporting_Code)) %>%
  dplyr::select(-Veg_Code)
 ```
 
@@ -1240,56 +1240,56 @@ NS1 <- function(Unit){
   xref1 = filter(unit_table,LMgmt_Code == Unit)
   #xref1$Veg_Code <- iconv(xref1$Veg_Code, from = "", to = "UTF-8", sub = NA)
   #xref2 <- as.data.frame(unique(xref1$Veg_Code))
-  #colnames(xref2)[1] = "Accepted_Code"
-  #xref2 <- data.frame(Accepted_Code = unique(xref1$Veg_Code), stringsAsFactors = FALSE)
+  #colnames(xref2)[1] = "Reporting_Code"
+  #xref2 <- data.frame(Reporting_Code = unique(xref1$Veg_Code), stringsAsFactors = FALSE)
 xref2 <- data.frame(
-  Accepted_Code = as.character(unique(xref1$Veg_Code)),
+  Reporting_Code = as.character(unique(xref1$Veg_Code)),
   recorded = rep("recorded", length(unique(xref1$Veg_Code))),
   stringsAsFactors = FALSE
 )
   
 current_yr_lpi = filter(lpi4, Unit_Code == Unit & Year == end_year) %>%
-  mutate(Accepted_Code = as.character(Accepted_Code))
+  mutate(Reporting_Code = as.character(Reporting_Code))
 
 current_yr_quad = filter(circ_quads, Unit_Code == Unit & Year == end_year) %>%
-  mutate(Accepted_Code = as.character(Accepted_Code))
+  mutate(Reporting_Code = as.character(Reporting_Code))
   
   # LPI New to Park (based on xref table)
-  df <- left_join(current_yr_lpi, xref2, by = "Accepted_Code")
+  df <- left_join(current_yr_lpi, xref2, by = "Reporting_Code")
   new_lpi = filter(df, is.na(recorded)) %>%
   filter(VegSub == "Vegetation") %>%
-  filter(!(Accepted_Code %in% c("NP", "AF", "PF", "AG", "PG", "MD", "SNAG"))) 
+  filter(!(Reporting_Code %in% c("NP", "AF", "PF", "AG", "PG", "MD", "SNAG"))) 
   
   # LPI New to Park (based on xref)
   park_lpi <- new_lpi %>%
-    select(Unit_Code,Year,Accepted_Code) %>%
+    select(Unit_Code,Year,Reporting_Code) %>%
     left_join(., mtbl_Plants %>% dplyr::select("Veg_Code","Common_Name","Scientific_Name"), 
-            by = c("Accepted_Code" = "Veg_Code")) %>%
+            by = c("Reporting_Code" = "Veg_Code")) %>%
     unique()
   
   # LPI New to Park (based on xref) -- shows which plots the new species were located
   plot_lpi <- new_lpi %>%
-    select(Unit_Code,Loc_Name,Std_Loc_Name,Year,Accepted_Code) %>%
+    select(Unit_Code,Loc_Name,Std_Loc_Name,Year,Reporting_Code) %>%
     left_join(., mtbl_Plants %>% dplyr::select("Veg_Code","Common_Name","Scientific_Name"), 
-            by = c("Accepted_Code" = "Veg_Code")) %>%
+            by = c("Reporting_Code" = "Veg_Code")) %>%
     unique()
   
   # Quad New to Park (based on xref)
-  df2 = left_join(current_yr_quad,xref2,by="Accepted_Code")
+  df2 = left_join(current_yr_quad,xref2,by="Reporting_Code")
   new_quad = filter(df2, is.na(recorded)) %>%
-  filter(!(Accepted_Code %in% c("NP", "AF", "PF", "AG", "PG", "MD", "SNAG"))) 
+  filter(!(Reporting_Code %in% c("NP", "AF", "PF", "AG", "PG", "MD", "SNAG"))) 
   
   park_quad <- new_quad %>%
-    select(Unit_Code,Year,Accepted_Code) %>%
+    select(Unit_Code,Year,Reporting_Code) %>%
     left_join(., mtbl_Plants %>% dplyr::select("Veg_Code","Common_Name","Scientific_Name"), 
-            by = c("Accepted_Code"="Veg_Code")) %>%
+            by = c("Reporting_Code"="Veg_Code")) %>%
     unique()
   
   # Quad New to Park (based on xref) -- shows which plots the new species were located
   plot_quad <- new_quad %>%
-    select(Unit_Code,Loc_Name,Std_Loc_Name,Year,Accepted_Code) %>%
+    select(Unit_Code,Loc_Name,Std_Loc_Name,Year,Reporting_Code) %>%
     left_join(., mtbl_Plants %>% dplyr::select("Veg_Code","Common_Name","Scientific_Name"), 
-            by = c("Accepted_Code"="Veg_Code")) %>%
+            by = c("Reporting_Code"="Veg_Code")) %>%
     unique()
 
   # Join table for query 1
@@ -1352,31 +1352,31 @@ lpi_allyears <- AllYears %>%
   dplyr::select(-Location_ID, -Event_ID, -Point_Line_ID, -Point_Veg_ID) %>%
   arrange(Unit_Code, Loc_Name, Start_Date, Tape_m, Rank) %>%
   drop_na(Tape_m) %>%
-  left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Accepted_Code), by = c("VegCode" = "Veg_Code")) %>%
+  left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Reporting_Code), by = c("VegCode" = "Veg_Code")) %>%
   filter(Unit_Code == Unit)
 
 # generate a list of all species and add 'recorded' column to indicate whether data is present 
-lpi_spp <- data.frame(Accepted_Code = unique(lpi_allyears$Accepted_Code),
+lpi_spp <- data.frame(Reporting_Code = unique(lpi_allyears$Reporting_Code),
                       recorded = "recorded") 
 
 # join to current year data and filter all new data (that hasn't been recorded previously)
-df <- left_join(current_yr_lpi, lpi_spp, by = "Accepted_Code")
+df <- left_join(current_yr_lpi, lpi_spp, by = "Reporting_Code")
 new_lpi = filter(df, is.na(recorded)) %>%
   filter(VegSub == "Vegetation") %>%
-  filter(!(Accepted_Code %in% c("NP", "AF", "PF", "AG", "PG", "MD", "SNAG"))) 
+  filter(!(Reporting_Code %in% c("NP", "AF", "PF", "AG", "PG", "MD", "SNAG"))) 
 
 # add in scientific name and accepted codes
 protocol_lpi <- new_lpi %>%
-  select(Unit_Code,Year,Accepted_Code) %>%
+  select(Unit_Code,Year,Reporting_Code) %>%
     left_join(., mtbl_Plants %>% dplyr::select("Veg_Code","Common_Name","Scientific_Name"), 
-            by = c("Accepted_Code" = "Veg_Code")) %>%
+            by = c("Reporting_Code" = "Veg_Code")) %>%
   unique()
 
 # indicates which plots the new species were found
 protocol_plot_lpi <- new_lpi %>%
-    select(Unit_Code,Loc_Name,Std_Loc_Name,Year,Accepted_Code) %>%
+    select(Unit_Code,Loc_Name,Std_Loc_Name,Year,Reporting_Code) %>%
     left_join(., mtbl_Plants %>% dplyr::select("Veg_Code","Common_Name","Scientific_Name"), 
-            by = c("Accepted_Code" = "Veg_Code")) %>%
+            by = c("Reporting_Code" = "Veg_Code")) %>%
   unique()
 
 # RA data
@@ -1386,7 +1386,7 @@ circ_allyears <- AllYears %>%
   dplyr::select(-Location_ID, -Event_ID, -Rapid_Point_ID) %>%
   arrange(Unit_Code, Loc_Name, Start_Date, Quad_Number) %>%
   filter(!is.na(Species_Code)) %>%
-  left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Accepted_Code), by = c("Species_Code" = "Veg_Code")) %>%
+  left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Reporting_Code), by = c("Species_Code" = "Veg_Code")) %>%
   filter(Unit_Code == Unit)
 
 divided_allyears <- AllYears %>%
@@ -1396,13 +1396,13 @@ divided_allyears <- AllYears %>%
   dplyr::select(-Location_ID, -Event_ID, -Div_Quad_ID) %>%
   arrange(Unit_Code, Loc_Name, Start_Date, Tape_m) %>%
   filter(!is.na(Veg_Code)) %>%
-  left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Accepted_Code), by = c("Veg_Code" = "Veg_Code")) %>%
+  left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Reporting_Code), by = c("Veg_Code" = "Veg_Code")) %>%
   filter(Unit_Code == Unit)
 
 # generates a data frame of all recorded species in either quadrat protocol
 # adds a recorded column to indicate that it has been found previously
-circ_spp <- data.frame(Accepted_Code = unique(circ_allyears$Accepted_Code)) 
-divided_spp <- data.frame(Accepted_Code = unique(divided_allyears$Accepted_Code)) 
+circ_spp <- data.frame(Reporting_Code = unique(circ_allyears$Reporting_Code)) 
+divided_spp <- data.frame(Reporting_Code = unique(divided_allyears$Reporting_Code)) 
 quads_spp <- rbind(circ_spp,divided_spp) %>%
   unique %>%
   mutate(recorded = "recorded")
@@ -1411,22 +1411,22 @@ quads_spp <- rbind(circ_spp,divided_spp) %>%
 quad <- filter(circ_quads, Unit_Code == Unit & Year == end_year)
 
 # isolates new species (recorded is NA so it hasn't been previously recorded)
-df <- left_join(quad, quads_spp, by = "Accepted_Code")
+df <- left_join(quad, quads_spp, by = "Reporting_Code")
 new_quad = filter(df, is.na(recorded)) %>%
-  filter(!(Accepted_Code %in% c("NP", "AF", "PF", "AG", "PG", "MD", "SNAG"))) 
+  filter(!(Reporting_Code %in% c("NP", "AF", "PF", "AG", "PG", "MD", "SNAG"))) 
 
 # Quad New to Protocol (based on raw data)
 protocol_quad <- new_quad %>%
-    select(Unit_Code,Year,Accepted_Code) %>%
+    select(Unit_Code,Year,Reporting_Code) %>%
     left_join(., mtbl_Plants %>% dplyr::select("Veg_Code","Common_Name","Scientific_Name"), 
-            by = c("Accepted_Code" = "Veg_Code")) %>%
+            by = c("Reporting_Code" = "Veg_Code")) %>%
   unique()
 
 # Quad New to Protocol by Plot (based on raw data)
 protocol_plot_quad <- new_quad %>%
-    select(Unit_Code,Loc_Name,Std_Loc_Name,Year,Accepted_Code) %>%
+    select(Unit_Code,Loc_Name,Std_Loc_Name,Year,Reporting_Code) %>%
     left_join(., mtbl_Plants %>% dplyr::select("Veg_Code","Common_Name","Scientific_Name"), 
-            by = c("Accepted_Code" = "Veg_Code")) %>%
+            by = c("Reporting_Code" = "Veg_Code")) %>%
   unique()
 
 # joins lpi & quad data
@@ -1478,20 +1478,20 @@ lpi_allyears <- AllYears %>%
   dplyr::select(-Location_ID, -Event_ID, -Point_Line_ID, -Point_Veg_ID) %>%
   arrange(Unit_Code, Loc_Name, Start_Date, Tape_m, Rank) %>%
   drop_na(Tape_m) %>%
-  left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Accepted_Code), by = c("VegCode" = "Veg_Code")) %>%
+  left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Reporting_Code), by = c("VegCode" = "Veg_Code")) %>%
   filter(Unit_Code == Unit) %>%
-  select("Unit_Code","Loc_Name","Std_Loc_Name","VegCode","Accepted_Code") %>%
+  select("Unit_Code","Loc_Name","Std_Loc_Name","VegCode","Reporting_Code") %>%
   unique() %>%
   filter(!(VegCode %in% c("LITTER", "NP", "SOIL", "BARE", "WOOD"))) %>%
   mutate(recorded = "recorded")
 
-df <- left_join(current_yr, lpi_allyears, by = c("Unit_Code","Loc_Name","Std_Loc_Name","Accepted_Code"))
+df <- left_join(current_yr, lpi_allyears, by = c("Unit_Code","Loc_Name","Std_Loc_Name","Reporting_Code"))
 new_lpi = filter(df, is.na(recorded)) %>%
   filter(VegSub == "Vegetation") %>%
-  filter(!(Accepted_Code %in% c("NP", "AF", "PF", "AG", "PG", "MD", "SNAG"))) %>%
-  select("Unit_Code","Loc_Name","Std_Loc_Name","Year","Accepted_Code") %>%
+  filter(!(Reporting_Code %in% c("NP", "AF", "PF", "AG", "PG", "MD", "SNAG"))) %>%
+  select("Unit_Code","Loc_Name","Std_Loc_Name","Year","Reporting_Code") %>%
   left_join(., mtbl_Plants %>% dplyr::select("Veg_Code","Common_Name","Scientific_Name"), 
-            by = c("Accepted_Code" = "Veg_Code")) %>%
+            by = c("Reporting_Code" = "Veg_Code")) %>%
   unique()
 
 # RA data
@@ -1501,7 +1501,7 @@ circ_allyears <- AllYears %>%
   dplyr::select(Unit_Code,Loc_Name,Std_Loc_Name,Year,Species_Code) %>%
   arrange(Unit_Code, Loc_Name) %>%
   filter(!is.na(Species_Code)) %>%
-  left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Accepted_Code), by = c("Species_Code" = "Veg_Code")) %>%
+  left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Reporting_Code), by = c("Species_Code" = "Veg_Code")) %>%
   filter(Unit_Code == Unit) %>%
   mutate(recorded = "recorded")
 
@@ -1512,7 +1512,7 @@ divided_allyears <- AllYears %>%
   dplyr::select(Unit_Code,Loc_Name,Std_Loc_Name,Year,Veg_Code) %>%
   arrange(Unit_Code, Loc_Name) %>%
   filter(!is.na(Veg_Code)) %>%
-  left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Accepted_Code), by = c("Veg_Code" = "Veg_Code")) %>%
+  left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Reporting_Code), by = c("Veg_Code" = "Veg_Code")) %>%
   filter(Unit_Code == Unit) %>%
   rename(Species_Code = Veg_Code) %>%
   mutate(recorded = "recorded")
@@ -1523,12 +1523,12 @@ quads_spp <- rbind(circ_allyears,divided_allyears) %>%
 
 current_yr = filter(circ_quads, Unit_Code== Unit & Year == end_year)
 
-df <- left_join(current_yr, quads_spp, by = c("Unit_Code","Loc_Name","Std_Loc_Name","Accepted_Code"))
+df <- left_join(current_yr, quads_spp, by = c("Unit_Code","Loc_Name","Std_Loc_Name","Reporting_Code"))
 new_quad = filter(df, is.na(recorded)) %>%
-  filter(!(Accepted_Code %in% c("NP", "AF", "PF", "AG", "PG", "MD", "SNAG"))) %>%
-    select(Unit_Code,Year,Loc_Name,Std_Loc_Name,Accepted_Code) %>%
+  filter(!(Reporting_Code %in% c("NP", "AF", "PF", "AG", "PG", "MD", "SNAG"))) %>%
+    select(Unit_Code,Year,Loc_Name,Std_Loc_Name,Reporting_Code) %>%
     left_join(., mtbl_Plants %>% dplyr::select("Veg_Code","Common_Name","Scientific_Name"), 
-            by = c("Accepted_Code" = "Veg_Code")) %>%
+            by = c("Reporting_Code" = "Veg_Code")) %>%
   unique()
 
   new <- rbind(new_lpi,new_quad) %>%
@@ -2357,12 +2357,12 @@ lpi_allyears <- lpi_allyears %>%
   )
 
 # convert all synonyms to their accepted name, according to mtbl_Plants 
-lpi_allyears <- left_join(lpi_allyears, mtbl_Plants %>% dplyr::select(Veg_Code, Accepted_Code), 
+lpi_allyears <- left_join(lpi_allyears, mtbl_Plants %>% dplyr::select(Veg_Code, Reporting_Code), 
                   by = c("VegCode" = "Veg_Code")) %>%
-  mutate(Accepted_Code = case_when(VegCode == "NP" ~ "NP",
+  mutate(Reporting_Code = case_when(VegCode == "NP" ~ "NP",
                                    VegSub == "Substrate" ~ VegCode,
-                                   is.na(Accepted_Code) ~ VegCode,
-                                   .default = Accepted_Code)) %>%
+                                   is.na(Reporting_Code) ~ VegCode,
+                                   .default = Reporting_Code)) %>%
   dplyr::select(-VegCode) %>%
   filter(Unit_Code != "ALFL")
 
@@ -2399,8 +2399,8 @@ quads_allyears %<>%
   )
 
 # Finally, we will convert all synonyms to their accepted name, according to mtbl_Plants 
-circ_quads_allyears <- left_join(quads_allyears, mtbl_Plants %>% dplyr::select(Veg_Code, Accepted_Code), by = c("Species_Code" = "Veg_Code")) %>%
-  mutate(Accepted_Code = ifelse(is.na(Accepted_Code), Species_Code, Accepted_Code))%>%
+circ_quads_allyears <- left_join(quads_allyears, mtbl_Plants %>% dplyr::select(Veg_Code, Reporting_Code), by = c("Species_Code" = "Veg_Code")) %>%
+  mutate(Reporting_Code = ifelse(is.na(Reporting_Code), Species_Code, Reporting_Code))%>%
   dplyr::select(-Species_Code)%>%
   filter(Unit_Code != "ALFL")
 
@@ -2431,8 +2431,8 @@ divided_quads_allyears <- divided_quads_allyears %>%
   )
 
 # Convert to accepted code
-divided_quads_allyears <- left_join(divided_quads_allyears, mtbl_Plants %>% dplyr::select(Veg_Code, Accepted_Code), by = c("Veg_Code" = "Veg_Code")) %>%
-  mutate(Accepted_Code = ifelse(is.na(Accepted_Code), Veg_Code, Accepted_Code)) %>%
+divided_quads_allyears <- left_join(divided_quads_allyears, mtbl_Plants %>% dplyr::select(Veg_Code, Reporting_Code), by = c("Veg_Code" = "Veg_Code")) %>%
+  mutate(Reporting_Code = ifelse(is.na(Reporting_Code), Veg_Code, Reporting_Code)) %>%
  dplyr::select(-Veg_Code)
 ```
 
@@ -2448,32 +2448,32 @@ species_spreadsheet <- function(Unit){
   ## If the accepted code and veg/species code are both blank, this row is filtered out 
   ## Filter out NP (No Plant) or MD (Missing Data)
   table_lpi <- filter(lpi_allyears,Unit_Code == Unit & VegSub == "Vegetation") %>%
-    filter(!(Accepted_Code %in% c("", "N/A", NA, "MD", "NP"))) %>%
+    filter(!(Reporting_Code %in% c("", "N/A", NA, "MD", "NP"))) %>%
     left_join(mtbl_Plants %>% dplyr::select(Scientific_Name, Veg_Code), 
-                                            by = c("Accepted_Code"="Veg_Code")) %>%
+                                            by = c("Reporting_Code"="Veg_Code")) %>%
      mutate(Scientific_Name = ifelse(is.na(Scientific_Name)|
                                        Scientific_Name == "" |
                                        Scientific_Name == "N/A",
-                                     Accepted_Code, Scientific_Name))
+                                     Reporting_Code, Scientific_Name))
   
   table_circ_quad <- filter(circ_quads_allyears,Unit_Code == Unit) %>%
-    filter(!(Accepted_Code %in% c("", "N/A", NA, "MD", "NP"))) %>%
+    filter(!(Reporting_Code %in% c("", "N/A", NA, "MD", "NP"))) %>%
     left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Scientific_Name), 
-                                            by = c("Accepted_Code"="Veg_Code")) %>%
+                                            by = c("Reporting_Code"="Veg_Code")) %>%
      mutate(Scientific_Name = ifelse(is.na(Scientific_Name)|
                                        Scientific_Name == "" |
                                        Scientific_Name == "N/A",
-                                     Accepted_Code, Scientific_Name))
+                                     Reporting_Code, Scientific_Name))
   
   table_div_quad <- filter(divided_quads_allyears,Unit_Code == Unit) %>%
-    filter(!(Accepted_Code %in% c("", "N/A", NA, "MD", "NP"))) %>%
+    filter(!(Reporting_Code %in% c("", "N/A", NA, "MD", "NP"))) %>%
     filter(Nest_Type == "Vegetation") %>%
     left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Scientific_Name), 
-                                            by = c("Accepted_Code"="Veg_Code")) %>%
+                                            by = c("Reporting_Code"="Veg_Code")) %>%
      mutate(Scientific_Name = ifelse(is.na(Scientific_Name)|
                                        Scientific_Name == "" |
                                        Scientific_Name == "N/A",
-                                     Accepted_Code, Scientific_Name))
+                                     Reporting_Code, Scientific_Name))
   
   ## Get unique list of plot names at the site to iterate through in the for loop
   lpi_plots <- unique(table_lpi$Std_Loc_Name)
