@@ -1328,8 +1328,8 @@ nest_query2 <- divided_quads %>%
     by = c("Unit_Code", "Loc_Name", "Tape_m", "Year", "Veg_Code")
   ) %>%
   ungroup() %>%
-  filter(Percent_Cover_1x1 %in% c(NA, 0, "", -1111) | 
-        (Percent_Cover_1x1 %in% c(-9999) & Cover_Class_1x1 %in% c(NA, 0, "", -1111, -9999)))
+  filter(Percent_Cover_1x1 %in% c(NA, "", -1111) | 
+        (Percent_Cover_1x1 %in% c(-9999) & Cover_Class_1x1 %in% c(NA, "", -1111, -9999)))
 
 nest_query3 <- divided_quads %>%
   filter(Nest_Type == "Vegetation") %>%
@@ -1348,8 +1348,8 @@ nest_query3 <- divided_quads %>%
     by = c("Unit_Code", "Loc_Name", "Tape_m", "Year", "Veg_Code")
   ) %>%
   ungroup() %>%
-  filter(Percent_Cover_1x1 %in% c(NA, 0, "", -1111) | 
-        (Percent_Cover_1x1 %in% c(-9999) & Cover_Class_1x1 %in% c(NA, 0, "", -1111, -9999)))
+  filter(Percent_Cover_1x1 %in% c(NA, "", -1111) | 
+        (Percent_Cover_1x1 %in% c(-9999) & Cover_Class_1x1 %in% c(NA, "", -1111, -9999)))
 
 nest_query1 <- rbind(nest_query2, nest_query3)
 
