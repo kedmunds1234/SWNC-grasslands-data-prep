@@ -232,7 +232,16 @@ FireEvents <- xref_Fire_Locations %>%
     left_join(.,tbl_Fire_History) %>%
     mutate(Fire_Date = as.Date(Fire_Date, format="%m/%d/%Y")) %>%
     mutate(Year= lubridate::year(Fire_Date)) %>%
-    filter(Year >= (end_year - 5) & Year <= (end_year))
+    filter(Year >= (2010) & Year <= (end_year))
+
+# # Fire events table
+# FireEvents <- xref_Fire_Locations %>%
+#     left_join(.,tbl_Locations %>% select(Location_ID, Unit_Code, Loc_Name, Std_Loc_Name),
+#               by="Location_ID") %>%
+#     left_join(.,tbl_Fire_History) %>%
+#     mutate(Fire_Date = as.Date(Fire_Date, format="%m/%d/%Y")) %>%
+#     mutate(Year= lubridate::year(Fire_Date)) %>%
+#     filter(Year >= (end_year - 5) & Year <= (end_year))
 ```
 
 ### Defining Functions
@@ -245,13 +254,22 @@ The following code chunks provide functions to create a table and/or figure and 
 SE1_caption = "**SE 1. Fire/Sampling History** \n \n The figure below shows the fire event and sampling history of all SOPN data (ownership SOPN). This includes plots established by SOPN (Location Type Grasslands) and plots established by SPFG (Location Type Fire) but sampled by a joint or SOPN crew. Events shown are Grasslands Monitoring, Prescribed Burn, and Wildfire. \n "
 
 # select grassland monitoring columns for the sampling events figures
-AllYears <- tbl_Locations %>% 
+AllYears <- tbl_Locations %>%
   dplyr::select(Location_ID, Unit_Code, Loc_Name, Std_Loc_Name, Strata, Azimuth, Declination, Elevation, Loc_Type, Wildfire_History, Vegetation_Type, Ecological_Site, Stratification, Mngt_Unit, Mngt_Unit_Name, Reporting) %>%
   left_join(tbl_Events %>% dplyr::select(Location_ID, Event_ID, Start_Date, Event_Activity, Certified,Data_Ownership), by = "Location_ID") %>%
   filter(Data_Ownership == "SOPN") %>%
   mutate(Start_Date = as.Date(Start_Date, format="%m/%d/%Y"),
          Year= lubridate::year(Start_Date)) %>%
-  filter(Year >= (end_year-5) & Year <= (end_year))
+  filter(Year >= (2010) & Year <= (end_year))
+
+# # select grassland monitoring columns for the sampling events figures
+# AllYears <- tbl_Locations %>%
+#   dplyr::select(Location_ID, Unit_Code, Loc_Name, Std_Loc_Name, Strata, Azimuth, Declination, Elevation, Loc_Type, Wildfire_History, Vegetation_Type, Ecological_Site, Stratification, Mngt_Unit, Mngt_Unit_Name, Reporting) %>%
+#   left_join(tbl_Events %>% dplyr::select(Location_ID, Event_ID, Start_Date, Event_Activity, Certified,Data_Ownership), by = "Location_ID") %>%
+#   filter(Data_Ownership == "SOPN") %>%
+#   mutate(Start_Date = as.Date(Start_Date, format="%m/%d/%Y"),
+#          Year= lubridate::year(Start_Date)) %>%
+#   filter(Year >= (end_year-5) & Year <= (end_year))
 
   Events <- AllYears %>%
     distinct() %>%
@@ -270,7 +288,7 @@ SE1 <- function(Unit){
   plot <- ggplot(Table1, aes(x = Start_Date, y = Loc_Name, shape=Event, color=Event)) + 
     geom_point() + 
     ggtitle(paste(Unit)) + 
-    theme_minimal()+
+    theme_bw()+
     scale_color_manual(values = c("Grasslands Monitoring" = "#018571", 
                                   "Prescribed Burn" = "#DFC27d",
                                   "Wildfire" = "#A6611A" ))
@@ -286,14 +304,25 @@ SE2 <- function(Unit){
     mutate(across(c(Reporting, Certified), as.character))
   
   plot <- ggplot(Events,aes(x = Start_Date, y = Loc_Name, shape=Certified, color=Certified)) + 
-          geom_point(position = position_jitter(width = 0.1, height = 0)) +
+          geom_point(position = position_jitterdodge(jitter.width = 0.1, 
+              jitter.height = 0, dodge.width = 0.5), size = 2) +
           ggtitle(paste(Unit))+
           #facet_wrap(. ~ Unit_Code, scales="free") + 
-          theme_minimal()+
-          scale_color_manual(values=c("1"="#E69F00","0"="#56B4E9"))
+          theme_bw()+
+          scale_color_manual(values=c("1"= "#CD6600","0"="#4169E1"))
   cat(SE2_caption)
   return(plot)
 }
+  
+#   plot <- ggplot(Events,aes(x = Start_Date, y = Loc_Name, shape=Certified, color=Certified)) +
+#           geom_point(position = position_jitter(width = 0.1, height = 0)) +
+#           ggtitle(paste(Unit))+
+#           #facet_wrap(. ~ Unit_Code, scales="free") +
+#           theme_minimal()+
+#           scale_color_manual(values=c("1"="#E69F00","0"="#56B4E9"))
+#   cat(SE2_caption)
+#   return(plot)
+# }
 ```
 
 ```{r}
@@ -775,7 +804,7 @@ T1 <- function(Unit){
   filter(Unit_Code==Unit))
 }
 
-T2_caption <- "**T 2. Non-Woody Species** \n \n This table displays any plant species recorded in the tree table that are not trees or shrubs. These will be corrected in the database if possible, and otherwise flagged."
+T2_caption <- "**T 2. Non-Woody Species** \n \n This table displays any plant species recorded in the tree table that are not trees. These will be corrected in the database if possible, and otherwise flagged."
 
 T2 <- function(Unit){
   cat(T2_caption)
@@ -786,7 +815,7 @@ T2 <- function(Unit){
   left_join(.,mtbl_Plants %>% dplyr::select(Veg_Code,Primary_Lifeform,Secondary_Lifeform),by = c("VegCode" = "Veg_Code")) %>%
   dplyr::select(Unit_Code, Loc_Name, Start_Date, Tape_m,VegCode,VegCode_Flag,
                 Primary_Lifeform, Secondary_Lifeform) %>%
-  filter(Primary_Lifeform != "Tree" & Primary_Lifeform != "Shrub"),
+  filter(Primary_Lifeform != "Tree"),
   width = "100%", 
   options = list(scrollX = TRUE),
   filter = list(position = c('top'), clear = FALSE))
@@ -1054,7 +1083,7 @@ DQ2 <- function(Unit){
   datatable(divided_quads %>%
   filter(Unit_Code == Unit) %>%
   filter(!Tape_m %in%seq(0, 40, 10)) %>%
-  select(Unit_Code,Loc_Name,Start_Date,Tape_m,Tape_m_Flag,Nest_Size),
+  select(Unit_Code,Loc_Name,Start_Date,Tape_m,Tape_m_Flag,Nest_Size,Veg_Code),
   width = "100%", 
   options = list(scrollX = TRUE),
   filter = list(position = c('top'), clear = FALSE))
@@ -1069,34 +1098,55 @@ DQ3 <- function(Unit){
   
   datatable(divided_quads %>%
   filter(Unit_Code == Unit) %>%
-  filter(is.na(Tape_m)|is.na(Nest_Size)) %>%
-  select(Unit_Code,Loc_Name,Start_Date,Tape_m,Tape_m_Flag,Nest_Size),
-  width = "100%", 
+  filter(Tape_m %in% c(NA, "", -1111, -9999)| Nest_Size %in% c(NA, "", -1111, -9999)) %>%
+  select(Unit_Code,Loc_Name,Start_Date,Tape_m,Tape_m_Flag,Nest_Size,Veg_Code),
+  width = "100%",
   options = list(scrollX = TRUE),
   filter = list(position = c('top'), clear = FALSE))
 }
+  
+#   datatable(divided_quads %>%
+#   filter(Unit_Code == Unit) %>%
+#   filter(is.na(Tape_m)|is.na(Nest_Size)) %>%
+#   select(Unit_Code,Loc_Name,Start_Date,Tape_m,Tape_m_Flag,Nest_Size),
+#   width = "100%",
+#   options = list(scrollX = TRUE),
+#   filter = list(position = c('top'), clear = FALSE))
+# }
 ```
 
 ```{r}
 DQ4_caption = "**DQ 4. Duplicate Species** \n \n This query looks for nests that have the same species recorded twice. In our protocol, plant species are only recorded once in each nest. Duplicates will need to be removed for analysis, but will remain in the database and be flagged."
 
-duplicate_sp0 <- divided_quads %>% 
-  filter(Senesced==0) %>%
-  arrange(Unit_Code,Loc_Name,Year, Tape_m, Nest_Size, Veg_Code) %>%
-  group_by(Unit_Code,Loc_Name,Start_Date, Tape_m, Nest_Size) %>%
-  mutate(PriorVeg = lag(Veg_Code),
-         NextVeg = lead(Veg_Code)) %>%
-  filter(Veg_Code %in% c(PriorVeg, NextVeg)) %>%
-  select(-PriorVeg,-NextVeg)
+duplicate_sp0 <- divided_quads %>%
+  filter(Senesced == 0) %>%
+  group_by(Unit_Code, Loc_Name, Start_Date, Tape_m, Nest_Size, Veg_Code) %>%
+  filter(n() > 1) %>%
+  ungroup()
 
-duplicate_sp1 <- divided_quads %>% 
-  filter(Senesced==1) %>%
-  arrange(Unit_Code,Loc_Name,Year, Tape_m, Nest_Size, Veg_Code) %>%
-  group_by(Unit_Code,Loc_Name,Start_Date, Tape_m, Nest_Size) %>%
-  mutate(PriorVeg = lag(Veg_Code),
-         NextVeg = lead(Veg_Code)) %>%
-  filter(Veg_Code %in% c(PriorVeg, NextVeg)) %>%
-  select(-PriorVeg,-NextVeg)
+duplicate_sp1 <- divided_quads %>%
+  filter(Senesced == 1) %>%
+  group_by(Unit_Code, Loc_Name, Start_Date, Tape_m, Nest_Size, Veg_Code) %>%
+  filter(n() > 1) %>%
+  ungroup()
+
+# duplicate_sp0 <- divided_quads %>%
+#   filter(Senesced==0) %>%
+#   arrange(Unit_Code,Loc_Name,Year, Tape_m, Nest_Size, Veg_Code) %>%
+#   group_by(Unit_Code,Loc_Name,Start_Date, Tape_m, Nest_Size) %>%
+#   mutate(PriorVeg = lag(Veg_Code),
+#          NextVeg = lead(Veg_Code)) %>%
+#   filter(Veg_Code %in% c(PriorVeg, NextVeg)) %>%
+#   select(-PriorVeg,-NextVeg)
+# 
+# duplicate_sp11 <- divided_quads %>%
+#   filter(Senesced==1) %>%
+#   arrange(Unit_Code,Loc_Name,Year, Tape_m, Nest_Size, Veg_Code) %>%
+#   group_by(Unit_Code,Loc_Name,Start_Date, Tape_m, Nest_Size) %>%
+#   mutate(PriorVeg = lag(Veg_Code),
+#          NextVeg = lead(Veg_Code)) %>%
+#   filter(Veg_Code %in% c(PriorVeg, NextVeg)) %>%
+#   select(-PriorVeg,-NextVeg)
 
 duplicate_sp <- rbind(duplicate_sp0,duplicate_sp1)
 ```
@@ -1108,7 +1158,7 @@ DQ4 <- function(Unit){
   datatable(duplicate_sp %>%
               filter(Unit_Code == Unit) %>%
               select(Unit_Code,Loc_Name,Start_Date,Tape_m,Nest_Size,Veg_Code,Veg_Code_Flag,
-                     Senesced,Senesced_Flag,Percent_Cover,Percent_Cover_Flag),
+                     Senesced,Senesced_Flag,Percent_Cover,Percent_Cover_Flag, Cover_Class,   Cover_Class_Flag),
   width = "100%", 
   options = list(scrollX = TRUE),
   filter = list(position = c('top'), clear = FALSE))
@@ -1132,67 +1182,126 @@ DQ4 <- function(Unit){
 ```
 
 ```{r}
-DQ5_caption = "**DQ 5. Missing Cover** \n \n This query looks for species or substrate codes that do not have a cover estimate assigned."
+DQ5_caption = "**DQ 5. Missing Cover** \n \n This query displays species or substrate codes that are missing both a percent cover and cover class, codes that have a cover class entered but no percent cover, and codes with NA (-9999) as the percent cover and no cover class entered."
+
+# DQ5_caption = "**DQ 5. Missing Cover** \n \n This query looks for species or substrate codes that do not have a cover estimate assigned."
 
 DQ5 <- function(Unit){
   cat(DQ5_caption)
   
   datatable(divided_quads %>%
   filter(Unit_Code == Unit) %>%
-  dplyr::select(Unit_Code, Loc_Name, Start_Date, Tape_m, Nest_Size, Veg_Code, 
-                Percent_Cover, Percent_Cover_Flag) %>%
-  filter(Percent_Cover %in% c(NA, "", -1111, -9999)),
+  dplyr::select(Unit_Code, Loc_Name, Start_Date, Tape_m, Nest_Size, Veg_Code,Senesced, 
+                Percent_Cover, Percent_Cover_Flag, Cover_Class, Cover_Class_Flag) %>%
+  filter(Percent_Cover %in% c(NA, "", -1111) | 
+        (Percent_Cover %in% c(-9999) & Cover_Class %in% c(NA, "", -1111, -9999))),
   width = "100%", 
   options = list(scrollX = TRUE),
   filter = list(position = c('top'), clear = FALSE))
 }
+
+# DQ5 <- function(Unit){
+#   cat(DQ5_caption)
+#   
+#   datatable(divided_quads %>%
+#   filter(Unit_Code == Unit) %>%
+#   dplyr::select(Unit_Code, Loc_Name, Start_Date, Tape_m, Nest_Size, Veg_Code, 
+#                 Percent_Cover, Percent_Cover_Flag) %>%
+#   filter(Percent_Cover %in% c(NA, "", -1111, -9999)),
+#   width = "100%", 
+#   options = list(scrollX = TRUE),
+#   filter = list(position = c('top'), clear = FALSE))
+# }
 ```
 
 ```{r}
 DQ6_caption = "**DQ 6. Missing Species** \n \n This query looks for species recorded in the 1x1 nest but not the 2x1. In our protocol, any species recorded in the 1x1 nest at a given tape meter mark should also have cover recorded for the second, 2x1 nest. Any that do not will be flagged as missing data."
 
 nest_query0 <- divided_quads %>%
-  filter(Percent_Cover > 0, Nest_Type == "Vegetation") %>%
+  filter(Nest_Type == "Vegetation") %>%
   filter(Senesced == 0) %>%
   group_by(Unit_Code, Loc_Name, Tape_m, Year) %>%
-  mutate(in_2x1 = Veg_Code %in% Veg_Code[Nest_Size == "2x1"]) %>%
-  filter(Nest_Size == "1x1", !in_2x1) %>%
+  filter(Nest_Size == "1x1") %>%
   left_join(
     divided_quads %>%
-      filter(Nest_Type == "Vegetation", Nest_Size == "2x1") %>%
-      select(Unit_Code, Loc_Name, Tape_m, Year, Veg_Code,
-             Percent_Cover_2x1 = Percent_Cover,
-             Percent_Cover_2x1_Flag = Percent_Cover_Flag),
-    by = c("Unit_Code", "Loc_Name", "Tape_m", "Year", "Veg_Code")
-  ) %>%
-  ungroup()
-
-nest_query1 <- divided_quads %>%
-  filter(Percent_Cover > 0, Nest_Type == "Vegetation") %>%
-  filter(Senesced == 1) %>%
-  group_by(Unit_Code, Loc_Name, Tape_m, Year) %>%
-  mutate(in_2x1 = Veg_Code %in% Veg_Code[Nest_Size == "2x1"]) %>%
-  filter(Nest_Size == "1x1", !in_2x1) %>%
-  left_join(
-    divided_quads %>%
-      filter(Nest_Type == "Vegetation", Nest_Size == "2x1") %>%
-      select(Unit_Code, Loc_Name, Tape_m, Year, Veg_Code,
-             Percent_Cover_2x1 = Percent_Cover,
-             Percent_Cover_2x1_Flag = Percent_Cover_Flag),
+      filter(Nest_Type == "Vegetation", Nest_Size == "2x1", Senesced == 0) %>%
+      select(
+        Unit_Code, Loc_Name, Tape_m, Year, Veg_Code,
+        Percent_Cover_2x1 = Percent_Cover,
+        Percent_Cover_2x1_Flag = Percent_Cover_Flag,
+        Cover_Class_2x1 = Cover_Class,
+        Cover_Class_2x1_Flag = Cover_Class_Flag),
     by = c("Unit_Code", "Loc_Name", "Tape_m", "Year", "Veg_Code")
   ) %>%
   ungroup() %>%
-  filter(Percent_Cover_2x1 <= 0)
+  filter(Percent_Cover_2x1 %in% c(NA, 0, "", -1111) | 
+        (Percent_Cover_2x1 %in% c(-9999) & Cover_Class_2x1 %in% c(NA, 0, "", -1111, -9999)))
 
-nest_query <- rbind(nest_query0,nest_query1)
+nest_query1 <- divided_quads %>%
+  filter(Nest_Type == "Vegetation") %>%
+  filter(Senesced == 1) %>%
+  group_by(Unit_Code, Loc_Name, Tape_m, Year) %>%
+  filter(Nest_Size == "1x1") %>%
+  left_join(
+    divided_quads %>%
+      filter(Nest_Type == "Vegetation", Nest_Size == "2x1", Senesced == 1) %>%
+      select(
+        Unit_Code, Loc_Name, Tape_m, Year, Veg_Code,
+        Percent_Cover_2x1 = Percent_Cover,
+        Percent_Cover_2x1_Flag = Percent_Cover_Flag,
+        Cover_Class_2x1 = Cover_Class,
+        Cover_Class_2x1_Flag = Cover_Class_Flag),
+    by = c("Unit_Code", "Loc_Name", "Tape_m", "Year", "Veg_Code")
+  ) %>%
+  ungroup() %>%
+  filter(Percent_Cover_2x1 %in% c(NA, 0, "", -1111) | 
+        (Percent_Cover_2x1 %in% c(-9999) & Cover_Class_2x1 %in% c(NA, 0, "", -1111, -9999)))
+
+nest_query <- rbind(nest_query0, nest_query1)
+
+# nest_query0 <- divided_quads %>%
+#   filter(Percent_Cover > 0, Nest_Type == "Vegetation") %>%
+#   filter(Senesced == 0) %>%
+#   group_by(Unit_Code, Loc_Name, Tape_m, Year) %>%
+#   mutate(in_2x1 = Veg_Code %in% Veg_Code[Nest_Size == "2x1"]) %>%
+#   filter(Nest_Size == "1x1", !in_2x1) %>%
+#   left_join(
+#     divided_quads %>%
+#       filter(Nest_Type == "Vegetation", Nest_Size == "2x1") %>%
+#       select(Unit_Code, Loc_Name, Tape_m, Year, Veg_Code,
+#              Percent_Cover_2x1 = Percent_Cover,
+#              Percent_Cover_2x1_Flag = Percent_Cover_Flag),
+#     by = c("Unit_Code", "Loc_Name", "Tape_m", "Year", "Veg_Code")
+#   ) %>%
+#   ungroup()
+# 
+# nest_query1 <- divided_quads %>%
+#   filter(Percent_Cover > 0, Nest_Type == "Vegetation") %>%
+#   filter(Senesced == 1) %>%
+#   group_by(Unit_Code, Loc_Name, Tape_m, Year) %>%
+#   mutate(in_2x1 = Veg_Code %in% Veg_Code[Nest_Size == "2x1"]) %>%
+#   filter(Nest_Size == "1x1", !in_2x1) %>%
+#   left_join(
+#     divided_quads %>%
+#       filter(Nest_Type == "Vegetation", Nest_Size == "2x1") %>%
+#       select(Unit_Code, Loc_Name, Tape_m, Year, Veg_Code,
+#              Percent_Cover_2x1 = Percent_Cover,
+#              Percent_Cover_2x1_Flag = Percent_Cover_Flag),
+#     by = c("Unit_Code", "Loc_Name", "Tape_m", "Year", "Veg_Code")
+#   ) %>%
+#   ungroup() %>%
+#   filter(Percent_Cover_2x1 <= 0)
+# 
+# nest_query <- rbind(nest_query0,nest_query1)
 
 DQ6 <- function(Unit){
   cat(DQ6_caption)
   
   datatable(nest_query %>%
   filter(Unit_Code == Unit) %>%
-  dplyr::select(Unit_Code, Loc_Name, Start_Date, Tape_m, Veg_Code, 
-                Percent_Cover_2x1,Percent_Cover_2x1_Flag),
+  dplyr::select(Unit_Code, Loc_Name, Start_Date, Tape_m, Veg_Code, Senesced,
+                Percent_Cover_2x1,Percent_Cover_2x1_Flag, Cover_Class_2x1,
+                Cover_Class_2x1_Flag),
   width = "100%", 
   options = list(scrollX = TRUE),
   filter = list(position = c('top'), clear = FALSE))
@@ -1200,17 +1309,58 @@ DQ6 <- function(Unit){
 ```
 
 ```{r}
-DQ7_caption = "**DQ 7. Species Not in Main Plant Table** \n \n In this query, we look for species recorded in the quadrats that do not have a matching species in mtbl_Plants. This table displays a list of unmatched veg codes, by plot and tape meter mark. New species will be added and unknowns that cannot be identified will be updated to a lifeform category for analysis and publication."
+DQ7_caption = "**DQ 7. Missing Species Pt.2** \n \n This query looks for species recorded in the 2x1 nest but not the 1x1. In our protocol, any species recorded in the 2x1 nest at a given tape meter mark should also have cover recorded for the first, 1x1 nest, even if it is 0% cover. Any that do not will be flagged as missing data."
+
+nest_query2 <- divided_quads %>%
+  filter(Nest_Type == "Vegetation") %>%
+  filter(Senesced == 0) %>%
+  group_by(Unit_Code, Loc_Name, Tape_m, Year) %>%
+  filter(Nest_Size == "2x1") %>%
+  left_join(
+    divided_quads %>%
+      filter(Nest_Type == "Vegetation", Nest_Size == "1x1", Senesced == 0) %>%
+      select(
+        Unit_Code, Loc_Name, Tape_m, Year, Veg_Code,
+        Percent_Cover_1x1 = Percent_Cover,
+        Percent_Cover_1x1_Flag = Percent_Cover_Flag,
+        Cover_Class_1x1 = Cover_Class,
+        Cover_Class_1x1_Flag = Cover_Class_Flag),
+    by = c("Unit_Code", "Loc_Name", "Tape_m", "Year", "Veg_Code")
+  ) %>%
+  ungroup() %>%
+  filter(Percent_Cover_1x1 %in% c(NA, 0, "", -1111) | 
+        (Percent_Cover_1x1 %in% c(-9999) & Cover_Class_1x1 %in% c(NA, 0, "", -1111, -9999)))
+
+nest_query3 <- divided_quads %>%
+  filter(Nest_Type == "Vegetation") %>%
+  filter(Senesced == 1) %>%
+  group_by(Unit_Code, Loc_Name, Tape_m, Year) %>%
+  filter(Nest_Size == "2x1") %>%
+  left_join(
+    divided_quads %>%
+      filter(Nest_Type == "Vegetation", Nest_Size == "1x1", Senesced == 1) %>%
+      select(
+        Unit_Code, Loc_Name, Tape_m, Year, Veg_Code,
+        Percent_Cover_1x1 = Percent_Cover,
+        Percent_Cover_1x1_Flag = Percent_Cover_Flag,
+        Cover_Class_1x1 = Cover_Class,
+        Cover_Class_1x1_Flag = Cover_Class_Flag),
+    by = c("Unit_Code", "Loc_Name", "Tape_m", "Year", "Veg_Code")
+  ) %>%
+  ungroup() %>%
+  filter(Percent_Cover_1x1 %in% c(NA, 0, "", -1111) | 
+        (Percent_Cover_1x1 %in% c(-9999) & Cover_Class_1x1 %in% c(NA, 0, "", -1111, -9999)))
+
+nest_query1 <- rbind(nest_query2, nest_query3)
 
 DQ7 <- function(Unit){
   cat(DQ7_caption)
   
-  datatable(divided_quads %>%
+  datatable(nest_query1 %>%
   filter(Unit_Code == Unit) %>%
-  filter(Nest_Type == "Plant Species") %>%
-  dplyr::select(Unit_Code, Loc_Name, Start_Date, Tape_m, Veg_Code) %>%
-  left_join(., mtbl_Plants %>% dplyr::select(Veg_Code, Scientific_Name)) %>%
-  filter(is.na(Scientific_Name)),
+  dplyr::select(Unit_Code, Loc_Name, Start_Date, Tape_m, Veg_Code, Senesced,
+                Percent_Cover_1x1,Percent_Cover_1x1_Flag, Cover_Class_1x1,
+                Cover_Class_1x1_Flag),
   width = "100%", 
   options = list(scrollX = TRUE),
   filter = list(position = c('top'), clear = FALSE))
@@ -1218,14 +1368,58 @@ DQ7 <- function(Unit){
 ```
 
 ```{r}
-# Convert to accepted code
+DQ8_caption = "**DQ 8. Species Not in Main Plant Table** \n \n In this query, we look for species and substrate recorded in the quadrats that do not have a matching species/substrate in mtbl_Plants or mtbl_Substrate. This table displays a list of unmatched veg codes, by plot and tape meter mark. New species will be added and unknowns that cannot be identified will be updated to a lifeform category for analysis and publication."
+
+DQ8 <- function(Unit){
+  cat(DQ8_caption)
+
+  quadrat_sp0 <- divided_quads %>%
+    filter(Unit_Code == Unit, Nest_Type == "Vegetation") %>%
+    dplyr::select(Unit_Code, Loc_Name, Start_Date, Tape_m, Veg_Code) %>%
+    anti_join(mtbl_Plants %>% distinct(Veg_Code), by = "Veg_Code"
+    ) %>%
+    mutate(Scientific_Name = NA_character_)
+
+  quadrat_sp1 <- divided_quads %>%
+    filter(Unit_Code == Unit, Nest_Type == "Substrate") %>%
+    dplyr::select(Unit_Code, Loc_Name, Start_Date, Tape_m, Veg_Code) %>%
+    anti_join(mtbl_Substrate %>% distinct(Veg_Code), by = "Veg_Code"
+    ) %>%
+    mutate(Scientific_Name = NA_character_)
+
+  quadrat_sp <- bind_rows(quadrat_sp0, quadrat_sp1)
+
+  datatable(
+    quadrat_sp %>%
+      dplyr::select(Unit_Code, Loc_Name, Start_Date, Tape_m,Veg_Code, Scientific_Name),
+    width = "100%",
+    options = list(scrollX = TRUE),
+    filter = list(position = c("top"), clear = FALSE))
+}
+
+# DQ8 <- function(Unit){
+#   cat(DQ8_caption)
+#   
+  # datatable(divided_quads %>%
+  # filter(Unit_Code == Unit) %>%
+  # filter(Nest_Type == "Vegetation") %>%
+  # dplyr::select(Unit_Code, Loc_Name, Start_Date, Tape_m, Veg_Code) %>%
+  # left_join(., mtbl_Plants %>% dplyr::select(Veg_Code, Scientific_Name)) %>%
+  # filter(is.na(Scientific_Name)),
+  # width = "100%",
+  # options = list(scrollX = TRUE),
+  # filter = list(position = c('top'), clear = FALSE))
+# }
+```
+
+```{r}
+# Convert to reporting code
 divided_quads2 <- left_join(divided_quads, mtbl_Plants %>% dplyr::select(Veg_Code, Reporting_Code), by = c("Veg_Code" = "Veg_Code")) %>%
   mutate(Reporting_Code = ifelse(is.na(Reporting_Code), Veg_Code, Reporting_Code)) %>%
  dplyr::select(-Veg_Code)
 ```
 
 #### New Species
-
 
 ```{r}
 unit_table=read.csv(paste0(dbExports,"/xref_Plants_Units.csv",sep=""),header=TRUE, sep = ",", quote = "\"'")
@@ -1354,7 +1548,7 @@ lpi_allyears <- AllYears %>%
   drop_na(Tape_m) %>%
   left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Reporting_Code), by = c("VegCode" = "Veg_Code")) %>%
   filter(Unit_Code == Unit)
-
+ 
 # generate a list of all species and add 'recorded' column to indicate whether data is present 
 lpi_spp <- data.frame(Reporting_Code = unique(lpi_allyears$Reporting_Code),
                       recorded = "recorded") 
@@ -1401,14 +1595,26 @@ divided_allyears <- AllYears %>%
 
 # generates a data frame of all recorded species in either quadrat protocol
 # adds a recorded column to indicate that it has been found previously
-circ_spp <- data.frame(Reporting_Code = unique(circ_allyears$Reporting_Code)) 
-divided_spp <- data.frame(Reporting_Code = unique(divided_allyears$Reporting_Code)) 
-quads_spp <- rbind(circ_spp,divided_spp) %>%
-  unique %>%
+circ_spp <- data.frame(Reporting_Code = as.character(unique(circ_allyears$Reporting_Code)))
+divided_spp <- data.frame(Reporting_Code = as.character(unique(divided_allyears$Reporting_Code)))
+quads_spp <- rbind(circ_spp, divided_spp) %>%
+  unique() %>%
   mutate(recorded = "recorded")
 
 # isolates current year data
-quad <- filter(circ_quads, Unit_Code == Unit & Year == end_year)
+quad <- filter(circ_quads, Unit_Code == Unit & Year == end_year) %>%
+  mutate(Reporting_Code = as.character(Reporting_Code))
+
+# # generates a data frame of all recorded species in either quadrat protocol
+# # adds a recorded column to indicate that it has been found previously
+# circ_spp <- data.frame(Reporting_Code = unique(circ_allyears$Reporting_Code)) 
+# divided_spp <- data.frame(Reporting_Code = unique(divided_allyears$Reporting_Code)) 
+# quads_spp <- rbind(circ_spp,divided_spp) %>%
+#   unique %>%
+#   mutate(recorded = "recorded")
+# 
+# # isolates current year data
+# quad <- filter(circ_quads, Unit_Code == Unit & Year == end_year)
 
 # isolates new species (recorded is NA so it hasn't been previously recorded)
 df <- left_join(quad, quads_spp, by = "Reporting_Code")
@@ -1460,7 +1666,10 @@ NS5 <- function(Unit){
 
   cat(NS5_caption)
   
-   current_yr = filter(lpi4,Unit_Code==Unit & Year == end_year)
+  current_yr <- filter(lpi4, Unit_Code == Unit & Year == end_year) %>%
+  mutate(Reporting_Code = as.character(Reporting_Code))
+  
+ #  current_yr = filter(lpi4,Unit_Code==Unit & Year == end_year)
 
 AllYears <- tbl_Locations %>% 
   dplyr::select(Location_ID, Unit_Code, Loc_Name, Std_Loc_Name) %>%
@@ -1517,13 +1726,22 @@ divided_allyears <- AllYears %>%
   rename(Species_Code = Veg_Code) %>%
   mutate(recorded = "recorded")
 
-quads_spp <- rbind(circ_allyears,divided_allyears) %>%
-  unique()%>%
+quads_spp <- rbind(circ_allyears, divided_allyears) %>%
+  mutate(Reporting_Code = as.character(Reporting_Code)) %>%
+  unique() %>%
   select(-Year)
 
-current_yr = filter(circ_quads, Unit_Code== Unit & Year == end_year)
+current_yr <- filter(circ_quads, Unit_Code == Unit & Year == end_year) %>%
+  mutate(Reporting_Code = as.character(Reporting_Code))
 
-df <- left_join(current_yr, quads_spp, by = c("Unit_Code","Loc_Name","Std_Loc_Name","Reporting_Code"))
+# quads_spp <- rbind(circ_allyears,divided_allyears) %>%
+#   unique()%>%
+#   select(-Year)
+# 
+# current_yr = filter(circ_quads, Unit_Code== Unit & Year == end_year)
+
+df <- left_join(current_yr, quads_spp,
+                by = c("Unit_Code", "Loc_Name", "Std_Loc_Name", "Reporting_Code"))
 new_quad = filter(df, is.na(recorded)) %>%
   filter(!(Reporting_Code %in% c("NP", "AF", "PF", "AG", "PG", "MD", "SNAG"))) %>%
     select(Unit_Code,Year,Loc_Name,Std_Loc_Name,Reporting_Code) %>%
@@ -2058,6 +2276,7 @@ DQ4("BEOL")
 DQ5("BEOL")
 DQ6("BEOL")
 DQ7("BEOL")
+DQ8("BEOL")
 ```
 
 ```{r,eval=eval_divided_quad && eval_CAVO,message=FALSE, warning=FALSE,results='asis'}
@@ -2069,6 +2288,7 @@ DQ4("CAVO")
 DQ5("CAVO")
 DQ6("CAVO")
 DQ7("CAVO")
+DQ8("CAVO")
 ```
 
 ```{r,eval=eval_divided_quad && eval_CHIC,message=FALSE, warning=FALSE,results='asis'}
@@ -2080,6 +2300,7 @@ DQ4("CHIC")
 DQ5("CHIC")
 DQ6("CHIC")
 DQ7("CHIC")
+DQ8("CHIC")
 ```
 
 ```{r,eval=eval_divided_quad && eval_FOLS,message=FALSE, warning=FALSE,results='asis'}
@@ -2091,6 +2312,7 @@ DQ4("FOLS")
 DQ5("FOLS")
 DQ6("FOLS")
 DQ7("FOLS")
+DQ8("FOLS")
 ```
 
 ```{r,eval=eval_divided_quad && eval_FOUN,message=FALSE, warning=FALSE,results='asis'}
@@ -2102,6 +2324,7 @@ DQ4("FOUN")
 DQ5("FOUN")
 DQ6("FOUN")
 DQ7("FOUN")
+DQ8("FOUN")
 ```
 
 ```{r,eval=eval_divided_quad && eval_LAMR,message=FALSE, warning=FALSE,results='asis'}
@@ -2113,6 +2336,7 @@ DQ4("LAMR")
 DQ5("LAMR")
 DQ6("LAMR")
 DQ7("LAMR")
+DQ8("LAMR")
 ```
 
 ```{r,eval=eval_divided_quad && eval_LYJO,message=FALSE, warning=FALSE,results='asis'}
@@ -2124,6 +2348,7 @@ DQ4("LYJO")
 DQ5("LYJO")
 DQ6("LYJO")
 DQ7("LYJO")
+DQ8("LYJO")
 ```
 
 ```{r,eval=eval_divided_quad && eval_PECO,message=FALSE, warning=FALSE,results='asis'}
@@ -2135,6 +2360,7 @@ DQ4("PECO")
 DQ5("PECO")
 DQ6("PECO")
 DQ7("PECO")
+DQ8("PECO")
 ```
 
 ```{r,eval=eval_divided_quad && eval_SAND,message=FALSE, warning=FALSE,results='asis'}
@@ -2146,6 +2372,7 @@ DQ4("SAND")
 DQ5("SAND")
 DQ6("SAND")
 DQ7("SAND")
+DQ8("SAND")
 ```
 
 ```{r,eval=eval_divided_quad && eval_WABA,message=FALSE, warning=FALSE,results='asis'}
@@ -2157,6 +2384,7 @@ DQ4("WABA")
 DQ5("WABA")
 DQ6("WABA")
 DQ7("WABA")
+DQ8("WABA")
 ```
 
 ```{r,eval=eval_new_species,message=FALSE, warning=FALSE,results='asis'}
@@ -2447,33 +2675,61 @@ species_spreadsheet <- function(Unit){
   ## Join with mtbl_Plants to add a scientific name for each accepted code
   ## If the accepted code and veg/species code are both blank, this row is filtered out 
   ## Filter out NP (No Plant) or MD (Missing Data)
-  table_lpi <- filter(lpi_allyears,Unit_Code == Unit & VegSub == "Vegetation") %>%
-    filter(!(Reporting_Code %in% c("", "N/A", NA, "MD", "NP"))) %>%
-    left_join(mtbl_Plants %>% dplyr::select(Scientific_Name, Veg_Code), 
-                                            by = c("Reporting_Code"="Veg_Code")) %>%
-     mutate(Scientific_Name = ifelse(is.na(Scientific_Name)|
-                                       Scientific_Name == "" |
-                                       Scientific_Name == "N/A",
-                                     Reporting_Code, Scientific_Name))
+  table_lpi <- filter(lpi_allyears, Unit_Code == Unit & VegSub == "Vegetation") %>%
+  mutate(Reporting_Code = as.character(Reporting_Code)) %>%
+  filter(!(Reporting_Code %in% c("", "N/A", NA, "MD", "NP"))) %>%
+  left_join(mtbl_Plants %>% dplyr::select(Scientific_Name, Veg_Code),
+            by = c("Reporting_Code" = "Veg_Code")) %>%
+  mutate(Scientific_Name = ifelse(is.na(Scientific_Name) | Scientific_Name == "" |
+                                    Scientific_Name == "N/A",
+                                  Reporting_Code, Scientific_Name))
   
-  table_circ_quad <- filter(circ_quads_allyears,Unit_Code == Unit) %>%
-    filter(!(Reporting_Code %in% c("", "N/A", NA, "MD", "NP"))) %>%
-    left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Scientific_Name), 
-                                            by = c("Reporting_Code"="Veg_Code")) %>%
-     mutate(Scientific_Name = ifelse(is.na(Scientific_Name)|
-                                       Scientific_Name == "" |
-                                       Scientific_Name == "N/A",
-                                     Reporting_Code, Scientific_Name))
+  # table_lpi <- filter(lpi_allyears,Unit_Code == Unit & VegSub == "Vegetation") %>%
+  #   filter(!(Reporting_Code %in% c("", "N/A", NA, "MD", "NP"))) %>%
+  #   left_join(mtbl_Plants %>% dplyr::select(Scientific_Name, Veg_Code), 
+  #                                           by = c("Reporting_Code"="Veg_Code")) %>%
+  #    mutate(Scientific_Name = ifelse(is.na(Scientific_Name)|
+  #                                      Scientific_Name == "" |
+  #                                      Scientific_Name == "N/A",
+  #                                    Reporting_Code, Scientific_Name))
   
-  table_div_quad <- filter(divided_quads_allyears,Unit_Code == Unit) %>%
-    filter(!(Reporting_Code %in% c("", "N/A", NA, "MD", "NP"))) %>%
-    filter(Nest_Type == "Vegetation") %>%
-    left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Scientific_Name), 
-                                            by = c("Reporting_Code"="Veg_Code")) %>%
-     mutate(Scientific_Name = ifelse(is.na(Scientific_Name)|
-                                       Scientific_Name == "" |
-                                       Scientific_Name == "N/A",
-                                     Reporting_Code, Scientific_Name))
+  table_circ_quad <- filter(circ_quads_allyears, Unit_Code == Unit) %>%
+  mutate(Reporting_Code = as.character(Reporting_Code)) %>%
+  filter(!(Reporting_Code %in% c("", "N/A", NA, "MD", "NP"))) %>%
+  left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Scientific_Name),
+            by = c("Reporting_Code" = "Veg_Code")) %>%
+  mutate(Scientific_Name = ifelse(is.na(Scientific_Name) | Scientific_Name == "" |
+                                    Scientific_Name == "N/A",
+                                  Reporting_Code, Scientific_Name))
+  
+  # table_circ_quad <- filter(circ_quads_allyears,Unit_Code == Unit) %>%
+  #   filter(!(Reporting_Code %in% c("", "N/A", NA, "MD", "NP"))) %>%
+  #   left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Scientific_Name), 
+  #                                           by = c("Reporting_Code"="Veg_Code")) %>%
+  #    mutate(Scientific_Name = ifelse(is.na(Scientific_Name)|
+  #                                      Scientific_Name == "" |
+  #                                      Scientific_Name == "N/A",
+  #                                    Reporting_Code, Scientific_Name))
+  
+  table_div_quad <- filter(divided_quads_allyears, Unit_Code == Unit) %>%
+  mutate(Reporting_Code = as.character(Reporting_Code)) %>%
+  filter(!(Reporting_Code %in% c("", "N/A", NA, "MD", "NP"))) %>%
+  filter(Nest_Type == "Vegetation") %>%
+  left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Scientific_Name),
+            by = c("Reporting_Code" = "Veg_Code")) %>%
+  mutate(Scientific_Name = ifelse(is.na(Scientific_Name) | Scientific_Name == "" |
+                                    Scientific_Name == "N/A",
+                                  Reporting_Code, Scientific_Name))
+  
+  # table_div_quad <- filter(divided_quads_allyears,Unit_Code == Unit) %>%
+  #   filter(!(Reporting_Code %in% c("", "N/A", NA, "MD", "NP"))) %>%
+  #   filter(Nest_Type == "Vegetation") %>%
+  #   left_join(mtbl_Plants %>% dplyr::select(Veg_Code, Scientific_Name), 
+  #                                           by = c("Reporting_Code"="Veg_Code")) %>%
+  #    mutate(Scientific_Name = ifelse(is.na(Scientific_Name)|
+  #                                      Scientific_Name == "" |
+  #                                      Scientific_Name == "N/A",
+  #                                    Reporting_Code, Scientific_Name))
   
   ## Get unique list of plot names at the site to iterate through in the for loop
   lpi_plots <- unique(table_lpi$Std_Loc_Name)
@@ -2545,10 +2801,19 @@ species_spreadsheet <- function(Unit){
       select(Scientific_Name,any_of(c("2010","2011","2012","2013","2014","2015")))
 
     ## Combine both quadrat procedures into one data frame
-    table_quad <- full_join(table_div_quad_3,table_circ_quad_3,by="Scientific_Name") %>%
+    table_quad <- full_join(
+    table_div_quad_3 %>% mutate(Scientific_Name = as.character(Scientific_Name)),
+    table_circ_quad_3 %>% mutate(Scientific_Name = as.character(Scientific_Name)),
+    by = "Scientific_Name") %>%
     arrange(tolower(Scientific_Name)) #alphabetizes veg codes
     table_quad[is.na(table_quad)] <- 0 # convert all NA values to 0
     table_quad <- table_quad %>% filter(!if_all(everything(), ~ . == 0))
+    
+    # ## Combine both quadrat procedures into one data frame
+    # table_quad <- full_join(table_div_quad_3,table_circ_quad_3,by="Scientific_Name") %>%
+    # arrange(tolower(Scientific_Name)) #alphabetizes veg codes
+    # table_quad[is.na(table_quad)] <- 0 # convert all NA values to 0
+    # table_quad <- table_quad %>% filter(!if_all(everything(), ~ . == 0))
 
     ## Create the output table
     ## First, we need to create a blank table of all species (from any protocol) and years.
