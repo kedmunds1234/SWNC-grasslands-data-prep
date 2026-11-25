@@ -260,9 +260,10 @@ AllYears <- tbl_Locations %>%
   filter(Data_Ownership == "SOPN") %>%
   mutate(Start_Date = as.Date(Start_Date, format="%m/%d/%Y"),
          Year= lubridate::year(Start_Date)) %>%
-  filter(Year >= (2010) & Year <= (end_year))
+filter(Year >= (2010) & Year <= (end_year))
 
-# # select grassland monitoring columns for the sampling events figures
+# OLD CODE 
+# select grassland monitoring columns for the sampling events figures
 # AllYears <- tbl_Locations %>%
 #   dplyr::select(Location_ID, Unit_Code, Loc_Name, Std_Loc_Name, Strata, Azimuth, Declination, Elevation, Loc_Type, Wildfire_History, Vegetation_Type, Ecological_Site, Stratification, Mngt_Unit, Mngt_Unit_Name, Reporting) %>%
 #   left_join(tbl_Events %>% dplyr::select(Location_ID, Event_ID, Start_Date, Event_Activity, Certified,Data_Ownership), by = "Location_ID") %>%
@@ -271,29 +272,97 @@ AllYears <- tbl_Locations %>%
 #          Year= lubridate::year(Start_Date)) %>%
 #   filter(Year >= (end_year-5) & Year <= (end_year))
 
-  Events <- AllYears %>%
-    distinct() %>%
-    select(Unit_Code,Loc_Name,Std_Loc_Name,Start_Date) %>%
-    mutate(Event = "Grasslands Monitoring")
+# Calculate year range for split tables
+n_years <- end_year - 2010 + 1
+half_years <- ceiling(n_years / 2)
+mid_year <- 2010 + half_years - 1
 
-  # modify fire events table for figures
-  Fire <- FireEvents %>%
-    rename(Start_Date = Fire_Date, Event = Fire_Type) %>%
-    select(Unit_Code,Loc_Name,Std_Loc_Name,Start_Date,Event)
+# modify events and fire events tables for figures (first half of years)
+Events1 <- AllYears %>%
+  distinct() %>%
+  select(Unit_Code, Loc_Name, Std_Loc_Name, Start_Date) %>%
+  mutate(Event = "Grasslands Monitoring") %>%
+  filter(between(lubridate::year(Start_Date), 2010, mid_year))
+
+Fire1 <- FireEvents %>%
+  rename(Start_Date = Fire_Date, Event = Fire_Type) %>%
+  select(Unit_Code, Loc_Name, Std_Loc_Name, Start_Date, Event) %>%
+  filter(between(lubridate::year(Start_Date), 2010, mid_year))
+  
+# modify events and fire events tables for figures (second half of years)
+Events2 <- AllYears %>%
+  distinct() %>%
+  select(Unit_Code, Loc_Name, Std_Loc_Name, Start_Date) %>%
+  mutate(Event = "Grasslands Monitoring") %>%
+  filter(between(lubridate::year(Start_Date), mid_year + 1, end_year))
+
+Fire2 <- FireEvents %>%
+  rename(Start_Date = Fire_Date, Event = Fire_Type) %>%
+  select(Unit_Code, Loc_Name, Std_Loc_Name, Start_Date, Event) %>%
+  filter(between(lubridate::year(Start_Date), mid_year + 1, end_year))
+ 
+  # Single graph code
+ # Events <- AllYears %>%
+  #   distinct() %>%
+  #   select(Unit_Code,Loc_Name,Std_Loc_Name,Start_Date) %>%
+  #   mutate(Event = "Grasslands Monitoring")
+  # 
+  # # modify fire events table for figures
+  # Fire <- FireEvents %>%
+  #   rename(Start_Date = Fire_Date, Event = Fire_Type) %>%
+  #   select(Unit_Code,Loc_Name,Std_Loc_Name,Start_Date,Event)
+
+#Single graph code
+#  SE1 <- function(Unit){
+#   Table1 <- rbind(Events,Fire) %>%
+#     filter(Unit_Code == Unit)
+#   
+#   plot <- ggplot(Table1, aes(x = Start_Date, y = Loc_Name, shape=Event, color=Event)) + 
+#     geom_point() + 
+#     ggtitle(paste(Unit)) + 
+#     theme_bwgray()+
+#     scale_color_manual(values = c("Grasslands Monitoring" = "#018571", 
+#                                   "Prescribed Burn" = "#DFC27d",
+#                                   "Wildfire" = "#A6611A" ))
+#   cat(SE1_caption, "\n\n")
+#   return(plot)}
 
 SE1 <- function(Unit){
-  Table1 <- rbind(Events,Fire) %>%
+
+  Table1 <- rbind(Events1, Fire1) %>%
     filter(Unit_Code == Unit)
-  
-  plot <- ggplot(Table1, aes(x = Start_Date, y = Loc_Name, shape=Event, color=Event)) + 
-    geom_point() + 
-    ggtitle(paste(Unit)) + 
-    theme_bw()+
-    scale_color_manual(values = c("Grasslands Monitoring" = "#018571", 
-                                  "Prescribed Burn" = "#DFC27d",
-                                  "Wildfire" = "#A6611A" ))
-  cat(SE1_caption, "\n\n")
-  return(plot)}
+
+  Table2 <- rbind(Events2, Fire2) %>%
+    filter(Unit_Code == Unit)
+
+plot1 <- ggplot(Table1, aes(x = Start_Date, y = Loc_Name,
+                              shape = Event, color = Event)) +
+    geom_point(size = 2) +
+    ggtitle(paste(Unit, "First Half")) +
+    theme_gray() +
+     scale_color_manual(values=
+                     c("Grasslands Monitoring"= "#4169E1","Wildfire"="#CD6600",
+                       "Prescribed Burn" = "#00CD00")) +
+    scale_x_date(breaks = seq(as.Date("2010-01-01"),as.Date(paste0(mid_year,  "-01-01")),by = "1 year"),
+  date_labels = "%Y",
+  limits = as.Date(c("2010-01-01", paste0(mid_year, "-12-31")))) +
+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+plot2 <- ggplot(Table2, aes(x = Start_Date, y = Loc_Name,
+                            shape = Event, color = Event)) +
+  geom_point(size = 2) +
+  ggtitle(paste(Unit, "Second Half")) +
+  theme_gray() +
+  scale_color_manual(values=
+                     c("Grasslands Monitoring"= "#4169E1","Wildfire"="#CD6600",
+                       "Prescribed Burn" = "#00CD00")) +
+  scale_x_date(breaks = seq(as.Date(paste0(mid_year + 1, "-01-01")),as.Date(paste0(end_year, "-01-01")),by = "1 year"),
+    date_labels = "%Y",
+    limits = as.Date(c(paste0(mid_year + 1, "-01-01"),paste0(end_year, "-12-31")))) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+  return(list(plot1, plot2))
+}
 ```
 
 ```{r}
@@ -308,7 +377,7 @@ SE2 <- function(Unit){
               jitter.height = 0, dodge.width = 0.5), size = 2) +
           ggtitle(paste(Unit))+
           #facet_wrap(. ~ Unit_Code, scales="free") + 
-          theme_bw()+
+          theme_gray()+
           scale_color_manual(values=c("1"= "#CD6600","0"="#4169E1"))
   cat(SE2_caption)
   return(plot)
@@ -1157,8 +1226,9 @@ DQ4 <- function(Unit){
   
   datatable(duplicate_sp %>%
               filter(Unit_Code == Unit) %>%
-              select(Unit_Code,Loc_Name,Start_Date,Tape_m,Nest_Size,Veg_Code,Veg_Code_Flag,
-                     Senesced,Senesced_Flag,Percent_Cover,Percent_Cover_Flag, Cover_Class,   Cover_Class_Flag),
+              select(Unit_Code,Loc_Name,Start_Date,Tape_m,Nest_Size,Veg_Code,
+                     Veg_Code_Flag,Senesced,Senesced_Flag,Percent_Cover,
+                     Percent_Cover_Flag,Cover_Class,Cover_Class_Flag),
   width = "100%", 
   options = list(scrollX = TRUE),
   filter = list(position = c('top'), clear = FALSE))
@@ -1182,7 +1252,7 @@ DQ4 <- function(Unit){
 ```
 
 ```{r}
-DQ5_caption = "**DQ 5. Missing Cover** \n \n This query displays species or substrate codes that are missing both a percent cover and cover class, codes that have a cover class entered but no percent cover, and codes with NA (-9999) as the percent cover and no cover class entered."
+DQ5_caption = "**DQ 5. Missing Cover** \n \n This query looks for species or substrate codes that are missing both a percent cover and cover class estimate. In our protocol, all veg codes should have one or the other assigned. Due to the method of data entry, any veg code assigned a cover class should also have the value -9999 (NA) in the percent cover column. This query will return any veg codes that do not. It will also return any veg codes with -9999 in the percent cover column and no cover class assigned."
 
 # DQ5_caption = "**DQ 5. Missing Cover** \n \n This query looks for species or substrate codes that do not have a cover estimate assigned."
 
@@ -1235,7 +1305,8 @@ nest_query0 <- divided_quads %>%
   ) %>%
   ungroup() %>%
   filter(Percent_Cover_2x1 %in% c(NA, 0, "", -1111) | 
-        (Percent_Cover_2x1 %in% c(-9999) & Cover_Class_2x1 %in% c(NA, 0, "", -1111, -9999)))
+        (Percent_Cover_2x1 %in% c(-9999) & Cover_Class_2x1 %in% c(NA, 0, "", -1111,
+         -9999)))
 
 nest_query1 <- divided_quads %>%
   filter(Nest_Type == "Vegetation") %>%
@@ -1255,7 +1326,8 @@ nest_query1 <- divided_quads %>%
   ) %>%
   ungroup() %>%
   filter(Percent_Cover_2x1 %in% c(NA, 0, "", -1111) | 
-        (Percent_Cover_2x1 %in% c(-9999) & Cover_Class_2x1 %in% c(NA, 0, "", -1111, -9999)))
+        (Percent_Cover_2x1 %in% c(-9999) & Cover_Class_2x1 %in% c(NA, 0, "", -1111,
+         -9999)))
 
 nest_query <- rbind(nest_query0, nest_query1)
 
@@ -1309,7 +1381,7 @@ DQ6 <- function(Unit){
 ```
 
 ```{r}
-DQ7_caption = "**DQ 7. Missing Species Pt.2** \n \n This query looks for species recorded in the 2x1 nest but not the 1x1. In our protocol, any species recorded in the 2x1 nest at a given tape meter mark should also have cover recorded for the first, 1x1 nest, even if it is 0% cover. Any that do not will be flagged as missing data."
+DQ7_caption = "**DQ 7. Missing Species Pt.2** \n \n This query looks for species recorded in the 2x1 nest but not the 1x1. In our protocol, any species recorded in the 2x1 nest at a given tape meter mark should also have cover recorded for the first, 1x1 nest, even if it is 0%. Any that do not will be flagged as missing data."
 
 nest_query2 <- divided_quads %>%
   filter(Nest_Type == "Vegetation") %>%
@@ -1368,7 +1440,7 @@ DQ7 <- function(Unit){
 ```
 
 ```{r}
-DQ8_caption = "**DQ 8. Species Not in Main Plant Table** \n \n In this query, we look for species and substrate recorded in the quadrats that do not have a matching species/substrate in mtbl_Plants or mtbl_Substrate. This table displays a list of unmatched veg codes, by plot and tape meter mark. New species will be added and unknowns that cannot be identified will be updated to a lifeform category for analysis and publication."
+DQ8_caption = "**DQ 8. Species Not in Main Plant Table** \n \n In this query, we look for species recorded in the divided quads that do not have a matching species in mtbl_plants, or substrates without a matching code in mtbl_substrate. This query returns any unmatched codes, with the plot and tape meter mark. New species will be added and unknowns that cannot be identified will be updated to a lifeform category for analysis and publication."
 
 DQ8 <- function(Unit){
   cat(DQ8_caption)
@@ -1802,7 +1874,9 @@ cat("## Sampling Events {.tabset}\n\n")
 
 ```{r,results='asis', message=FALSE, warning=FALSE, eval=eval_sampling_events && eval_BEOL}
 cat("### BEOL \n\n")
-SE1("BEOL")
+results <- SE1("BEOL")
+print(results[[1]])
+print(results[[2]])
 SE2("BEOL")
 SE3("BEOL")
 SE4("BEOL")
@@ -1814,7 +1888,9 @@ SE8("BEOL")
 
 ```{r,results='asis', message=FALSE, warning=FALSE, fig.height=3,fig.width=7, eval=eval_sampling_events && eval_CAVO}
 cat("### CAVO \n\n")
-SE1("CAVO")
+results <- SE1("CAVO")
+print(results[[1]])
+print(results[[2]])
 SE2("CAVO")
 SE3("CAVO")
 SE4("CAVO")
@@ -1826,7 +1902,9 @@ SE8("CAVO")
 
 ```{r,results='asis', message=FALSE, warning=FALSE, eval=eval_sampling_events && eval_CHIC}
 cat("### CHIC \n\n")
-SE1("CHIC")
+results <- SE1("CHIC")
+print(results[[1]])
+print(results[[2]])
 SE2("CHIC")
 SE3("CHIC")
 SE4("CHIC")
@@ -1838,7 +1916,9 @@ SE8("CHIC")
 
 ```{r,results='asis', message=FALSE, warning=FALSE,fig.height=3.5,fig.width=7,eval=eval_sampling_events && eval_FOLS}
 cat("### FOLS \n\n")
-SE1("FOLS")
+results <- SE1("FOLS")
+print(results[[1]])
+print(results[[2]])
 SE2("FOLS")
 SE3("FOLS")
 SE4("FOLS")
@@ -1850,7 +1930,9 @@ SE8("FOLS")
 
 ```{r,results='asis', message=FALSE, warning=FALSE,fig.height=3,fig.width=7,eval=eval_sampling_events && eval_FOUN}
 cat("### FOUN \n\n")
-SE1("FOUN")
+results <- SE1("FOUN")
+print(results[[1]])
+print(results[[2]])
 SE2("FOUN")
 SE3("FOUN")
 SE4("FOUN")
@@ -1862,7 +1944,9 @@ SE8("FOUN")
 
 ```{r,results='asis', message=FALSE, warning=FALSE,fig.height=8,fig.width=7,eval=eval_sampling_events && eval_LAMR}
 cat("### LAMR \n\n")
-SE1("LAMR")
+results <- SE1("LAMR")
+print(results[[1]])
+print(results[[2]])
 SE2("LAMR")
 SE3("LAMR")
 SE4("LAMR")
@@ -1874,7 +1958,9 @@ SE8("LAMR")
 
 ```{r,results='asis', message=FALSE, warning=FALSE,fig.height=2,fig.width=7,eval=eval_sampling_events && eval_LYJO}
 cat("### LYJO \n\n")
-SE1("LYJO")
+results <- SE1("LYJO")
+print(results[[1]])
+print(results[[2]])
 SE2("LYJO")
 SE3("LYJO")
 SE4("LYJO")
@@ -1886,7 +1972,9 @@ SE8("LYJO")
 
 ```{r,results='asis', message=FALSE, warning=FALSE,eval=eval_sampling_events && eval_PECO}
 cat("### PECO \n\n")
-SE1("PECO")
+results <- SE1("PECO")
+print(results[[1]])
+print(results[[2]])
 SE2("PECO")
 SE3("PECO")
 SE4("PECO")
@@ -1898,7 +1986,9 @@ SE8("PECO")
 
 ```{r,results='asis', message=FALSE, warning=FALSE,eval=eval_sampling_events && eval_SAND}
 cat("### SAND \n\n")
-SE1("SAND")
+results <- SE1("SAND")
+print(results[[1]])
+print(results[[2]])
 SE2("SAND")
 SE3("SAND")
 SE4("SAND")
@@ -1910,7 +2000,9 @@ SE8("SAND")
 
 ```{r,results='asis', message=FALSE, warning=FALSE,eval=eval_sampling_events && eval_WABA}
 cat("### WABA \n\n")
-SE1("WABA")
+results <- SE1("WABA")
+print(results[[1]])
+print(results[[2]])
 SE2("WABA")
 SE3("WABA")
 SE4("WABA")
