@@ -1835,10 +1835,26 @@ new_quad = filter(df, is.na(recorded)) %>%
 #### Densiometer
 
 ```{r}
-D1_caption = "**D 1. Sampling Location** \n \n In our protocol, we take densiometer readings at the 10 m, 25 m and 40 m marks along the transect line. This query displays any shows any readings taken at points other than 10, 25 and 40."
+D1_caption = "**D 1. Missing Densiometer** \n \n In this query, we check for missing densiometer readings at each event, by plot."
 
 D1 <- function(Unit){
   cat(D1_caption)
+  
+  datatable(methods_sampled %>%
+  filter(Unit_Code == Unit) %>%
+  dplyr::select(Event_ID, Unit_Code, Loc_Name, Start_Date, Year, Densiometer) %>%
+  filter(Densiometer %in% c(NA, "", -1111)),
+  width = "100%", 
+  options = list(scrollX = TRUE),
+  filter = list(position = c('top'), clear = FALSE))
+}
+```
+
+```{r}
+D2_caption = "**D 2. Sampling Location** \n \n In our protocol, we take densiometer readings at the 10 m, 25 m and 40 m marks along the transect line. This query displays any shows any readings taken at points other than 10, 25 and 40."
+
+D2 <- function(Unit){
+  cat(D2_caption)
   
   datatable(densiometer %>%
   filter(Unit_Code == Unit) %>%
@@ -1849,14 +1865,14 @@ D1 <- function(Unit){
   filter = list(position = c('top'), clear = FALSE))
 }
 
-D2_caption = "**D 2. Measurement Out of Bounds** \n \n In our protocol, densiometer readings should be within 0-17. This query returns all values outside that range, including the numeric NA code of -1111."
+D3_caption = "**D 3. Measurement Out of Bounds** \n \n In our protocol, densiometer readings should be within 0-17. This query returns all values outside that range, including the numeric NA code of -1111."
 
 dens2 <- densiometer %>%
   select(-Std_Loc_Name,-Start_Date,-Notes) %>%
   filter(is.na(Count) | Count < 0 | Count > 17)
 
-D2 <- function(Unit){
-  cat(D2_caption) 
+D3 <- function(Unit){
+  cat(D3_caption) 
   
   datatable(dens2 %>%
   filter(Unit_Code == Unit),
@@ -2567,60 +2583,70 @@ cat("## Densiometer {.tabset}\n\n")
 cat("### BEOL\n\n")
 D1("BEOL")
 D2("BEOL")
+D3("BEOL")
 ```
 
 ```{r,eval=eval_densiometer && eval_CAVO,message=FALSE, warning=FALSE,results='asis'}
 cat("### CAVO\n\n")
 D1("CAVO")
 D2("CAVO")
+D3("CAVO")
 ```
 
 ```{r,eval=eval_densiometer && eval_CHIC,message=FALSE, warning=FALSE,results='asis'}
 cat("### CHIC\n\n")
 D1("CHIC")
 D2("CHIC")
+D3("CHIC")
 ```
 
 ```{r,eval=eval_densiometer && eval_FOLS,message=FALSE, warning=FALSE,results='asis'}
 cat("### FOLS\n\n")
 D1("FOLS")
 D2("FOLS")
+D3("FOLS")
 ```
 
 ```{r,eval=eval_densiometer && eval_FOUN,message=FALSE, warning=FALSE,results='asis'}
 cat("### FOUN\n\n")
 D1("FOUN")
 D2("FOUN")
+D3("FOUN")
 ```
 
 ```{r,eval=eval_densiometer && eval_LAMR,message=FALSE, warning=FALSE,results='asis'}
 cat("### LAMR\n\n")
 D1("LAMR")
 D2("LAMR")
+D3("LAMR")
 ```
 
 ```{r,eval=eval_densiometer && eval_LYJO,message=FALSE, warning=FALSE,results='asis'}
 cat("### LYJO\n\n")
 D1("LYJO")
 D2("LYJO")
+D3("LYJO")
 ```
 
 ```{r,eval=eval_densiometer && eval_PECO,message=FALSE, warning=FALSE,results='asis'}
 cat("### PECO\n\n")
 D1("PECO")
 D2("PECO")
+D3("PECO")
 ```
 
 ```{r,eval=eval_densiometer && eval_SAND,message=FALSE, warning=FALSE,results='asis'}
 cat("### SAND\n\n")
 D1("SAND")
 D2("SAND")
+D3("SAND")
 ```
 
 ```{r,eval=eval_densiometer && eval_WABA,message=FALSE, warning=FALSE,results='asis'}
 cat("### WABA\n\n")
 D1("WABA")
 D2("WABA")
+D3("WABA")
 ```
 
 ## Plot Species List
